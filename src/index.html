@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>To-Do List</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        background-color: #f4f4f4;
+      }
+      #todo-container {
+        background: white;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      ul {
+        list-style-type: none;
+        padding: 0;
+      }
+      li {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px;
+        border-bottom: 1px solid #ddd;
+      }
+      button {
+        margin-left: 10px;
+        cursor: pointer;
+      }
+      input[type="text"] {
+        margin-right: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="todo-container">
+      <h2>To-Do List</h2>
+      <input type="text" id="taskInput" placeholder="Nouvelle tâche" />
+      <button onclick="addTask()">Ajouter</button>
+      <button onclick="filterTasks(true)">Afficher Finies</button>
+      <button onclick="filterTasks(false)">Afficher Non Finies</button>
+      <ul id="taskList"></ul>
+      <button onclick="window.location.href='/api-docs/'">
+        Voir la documentation API
+      </button>
+    </div>
+
+    <script>
+      let allTasks = [];
+      async function fetchTasks() {
+        const response = await fetch("http://localhost:3000/api/tasks");
+        allTasks = await response.json();
+        renderTasks();
+      }
+
+      function renderTasks(filter = null) {
+        const taskList = document.getElementById("taskList");
+        taskList.innerHTML = "";
+        const filteredTasks =
+          filter === null
+            ? allTasks
+            : allTasks.filter((task) => task.completed === filter);
+        filteredTasks.forEach((task) => {
+          const li = document.createElement("li");
+          li.innerHTML = `
+                    <input type="text" value="${task.title}" id="edit-${
+            task.id
+          }">
+                    <button onclick="updateTask(${task.id})">Modifier</button>
+                    <button onclick="deleteTask(${task.id})">Supprimer</button>
+                    <button onclick="toggleComplete(${
+                      task.id
+                    }, ${!task.completed})">${
+            task.completed ? "Marquer Non Finie" : "Marquer Finie"
+          }</button>
+                `;
+          taskList.appendChild(li);
+        });
+      }
+
+      async function addTask() {
+        const taskInput = document.getElementById("taskInput");
+        await fetch("http://localhost:3000/api/tasks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: taskInput.value, completed: false }),
+        });
+        taskInput.value = "";
+        fetchTasks();
+      }
+
+      async function updateTask(id) {
+        const updatedTitle = document.getElementById(`edit-${id}`).value;
+        await fetch(`http://localhost:3000/api/tasks/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: updatedTitle }),
+        });
+        fetchTasks();
+      }
+
+      async function deleteTask(id) {
+        await fetch(`http://localhost:3000/api/tasks/${id}`, {
+          method: "DELETE",
+        });
+        fetchTasks();
+      }
+
+      async function toggleComplete(id, completed) {
+        await fetch(`http://localhost:3000/api/tasks/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ completed }),
+        });
+        fetchTasks();
+      }
+
+      function filterTasks(completed) {
+        renderTasks(completed);
+      }
+
+      fetchTasks();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,122 @@
+openapi: 3.0.0
+info:
+  title: To-Do List API
+  description: >
+    API permettant la gestion d'une liste de tâches (To-Do List).  
+    Elle permet de créer, récupérer, modifier et supprimer des tâches.  
+    Chaque tâche possède un ID unique, un titre, une description et un statut d'accomplissement.
+  version: 1.0.0
+
+paths:
+  /api/tasks:
+    get:
+      summary: Récupérer toutes les tâches
+      description: >
+        Retourne une liste de toutes les tâches enregistrées dans l'application.  
+        Cette requête ne nécessite aucun paramètre et retourne un tableau JSON contenant toutes les tâches.
+      responses:
+        "200":
+          description: Liste de toutes les tâches récupérée avec succès.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Task"
+
+    post:
+      summary: Créer une nouvelle tâche
+      description: >
+        Ajoute une nouvelle tâche à la liste.  
+        Le corps de la requête doit contenir un titre et éventuellement une description.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Task"
+      responses:
+        "201":
+          description: Tâche créée avec succès.
+
+  /api/tasks/{id}:
+    get:
+      summary: Récupérer une tâche spécifique
+      description: >
+        Retourne les détails d'une tâche spécifique identifiée par son ID.  
+        L'ID doit être fourni dans l'URL en tant que paramètre.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: La tâche demandée a été trouvée et retournée avec succès.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        "404":
+          description: Tâche non trouvée.
+
+    put:
+      summary: Mettre à jour une tâche existante
+      description: >
+        Modifie une tâche existante en mettant à jour ses informations.  
+        La tâche est identifiée par son ID fourni dans l'URL.  
+        Le corps de la requête doit contenir les champs à modifier (titre, description ou statut d'accomplissement).
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Task"
+      responses:
+        "200":
+          description: Tâche mise à jour avec succès.
+        "404":
+          description: Tâche non trouvée.
+
+    delete:
+      summary: Supprimer une tâche
+      description: >
+        Supprime une tâche existante de la liste.  
+        La tâche est identifiée par son ID fourni dans l'URL.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Tâche supprimée avec succès.
+        "404":
+          description: Tâche non trouvée.
+
+components:
+  schemas:
+    Task:
+      type: object
+      description: Modèle représentant une tâche individuelle dans la To-Do List.
+      properties:
+        id:
+          type: string
+          description: ID unique de la tâche.
+        title:
+          type: string
+          description: Titre de la tâche.
+        description:
+          type: string
+          description: Description détaillée de la tâche.
+        completed:
+          type: boolean
+          description: Statut de la tâche (`true` si terminée, `false` sinon).
