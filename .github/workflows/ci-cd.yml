@@ -67,14 +67,6 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Start the application server for E2E tests
-        run: npm start &
-        env:
-          PORT: 3000
-
-      - name: Wait for server to be ready
-        run: npx wait-on http://localhost:3000
-
       - name: Run Playwright end-to-end tests
         run: npx playwright test
 
