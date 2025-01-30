@@ -43,7 +43,7 @@ jobs:
 
   e2e-tests:
     runs-on: ubuntu-latest
-    needs: build
+    needs: unit-tests # Attendre que les tests unitaires soient terminés
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
