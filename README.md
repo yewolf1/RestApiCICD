@@ -119,13 +119,5 @@ RestApiCICD/
 └── README.md                # Documentation du projet
 ```
 
----
-
-## **💡 Fonctionnalités futures**
-
-- Implémentation d'une base de données réelle.
-- Gestion des utilisateurs avec authentification.
-- Déploiement automatisé sur un environnement de production.
-
 
 
