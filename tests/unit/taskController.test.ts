@@ -1,53 +1,103 @@
-import { TaskController } from '../../src/controllers/taskController';
-import { LocalStorageService } from '../../src/services/localStorageService';
-import { Task } from '../../src/models/taskModel';
+import request from "supertest";
+import app from "../../src/app";
+import { LocalStorageService } from "../../src/services/localStorageService";
 
-describe('TaskController', () => {
-  let taskController: TaskController;
-  let localStorageService: LocalStorageService;
-
+describe("TaskController API Tests", () => {
   beforeEach(() => {
-    localStorageService = new LocalStorageService();
-    taskController = new TaskController(localStorageService);
+    // Réinitialisation des données avant chaque test
+    LocalStorageService["tasks"] = [];
+    LocalStorageService["idCounter"] = 1;
   });
 
-  it('should create a new task', () => {
-    const task: Task = { id: '1', title: 'Test Task', description: 'Test Description', completed: false };
-    taskController.createTask(task);
-    const tasks = taskController.getTasks();
-    expect(tasks).toContainEqual(task);
+  it("Devrait créer une nouvelle tâche", async () => {
+    const task = {
+      title: "Test Task",
+      completed: false,
+    };
+
+    const response = await request(app).post("/api/tasks").send(task);
+
+    console.log(response.body);
+    expect(response.status).toBe(201);
+    expect(response.body).toHaveProperty("id");
+    expect(response.body.title).toBe(task.title);
+    expect(response.body.completed).toBe(task.completed);
   });
 
-  it('should retrieve all tasks', () => {
-    const task1: Task = { id: '1', title: 'Test Task 1', description: 'Test Description 1', completed: false };
-    const task2: Task = { id: '2', title: 'Test Task 2', description: 'Test Description 2', completed: false };
-    taskController.createTask(task1);
-    taskController.createTask(task2);
-    const tasks = taskController.getTasks();
-    expect(tasks).toEqual([task1, task2]);
+  it("Devrait récupérer toutes les tâches", async () => {
+    await request(app)
+      .post("/api/tasks")
+      .send({ title: "Task 1", completed: false });
+    await request(app)
+      .post("/api/tasks")
+      .send({ title: "Task 2", completed: false });
+
+    const response = await request(app).get("/api/tasks");
+
+    expect(response.status).toBe(200);
+    expect(response.body.length).toBe(2);
   });
 
-  it('should retrieve a task by ID', () => {
-    const task: Task = { id: '1', title: 'Test Task', description: 'Test Description', completed: false };
-    taskController.createTask(task);
-    const retrievedTask = taskController.getTaskById('1');
-    expect(retrievedTask).toEqual(task);
+  it("Devrait récupérer une tâche par ID", async () => {
+    const newTask = await request(app)
+      .post("/api/tasks")
+      .send({ title: "Task 3", completed: false });
+
+    const response = await request(app).get(`/api/tasks/${newTask.body.id}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.title).toBe("Task 3");
   });
 
-  it('should update a task by ID', () => {
-    const task: Task = { id: '1', title: 'Test Task', description: 'Test Description', completed: false };
-    taskController.createTask(task);
-    const updatedTask: Task = { id: '1', title: 'Updated Task', description: 'Updated Description', completed: true };
-    taskController.updateTask('1', updatedTask);
-    const retrievedTask = taskController.getTaskById('1');
-    expect(retrievedTask).toEqual(updatedTask);
+  it("Devrait retourner une erreur 404 si la tâche n'existe pas", async () => {
+    const response = await request(app).get("/api/tasks/999");
+    expect(response.status).toBe(404);
+    expect(response.body).toEqual({ error: "Task not found" });
   });
 
-  it('should delete a task by ID', () => {
-    const task: Task = { id: '1', title: 'Test Task', description: 'Test Description', completed: false };
-    taskController.createTask(task);
-    taskController.deleteTask('1');
-    const tasks = taskController.getTasks();
-    expect(tasks).not.toContainEqual(task);
+  it("Devrait mettre à jour une tâche existante", async () => {
+    const newTask = await request(app)
+      .post("/api/tasks")
+      .send({ title: "Old Task", completed: false });
+
+    const updatedTask = {
+      title: "Updated Task",
+      completed: true,
+    };
+
+    const response = await request(app)
+      .put(`/api/tasks/${newTask.body.id}`)
+      .send(updatedTask);
+
+    expect(response.status).toBe(200);
+    expect(response.body.title).toBe(updatedTask.title);
+    expect(response.body.completed).toBe(true);
+  });
+
+  it("Devrait retourner une erreur 404 si on essaie de modifier une tâche inexistante", async () => {
+    const response = await request(app)
+      .put("/api/tasks/999")
+      .send({ title: "Non-existent Task" });
+    expect(response.status).toBe(404);
+    expect(response.body).toEqual({ error: "Task not found" });
+  });
+
+  it("Devrait supprimer une tâche existante", async () => {
+    const newTask = await request(app).post("/api/tasks").send({
+      title: "Task to Delete",
+      completed: false,
+    });
+
+    const response = await request(app).delete(`/api/tasks/${newTask.body.id}`);
+
+    expect(response.status).toBe(204);
+
+    const checkTask = await request(app).get(`/api/tasks/${newTask.body.id}`);
+    expect(checkTask.status).toBe(404);
+  });
+
+  it("Devrait retourner une erreur 404 si on essaie de supprimer une tâche inexistante", async () => {
+    const response = await request(app).delete("/api/tasks/999");
+    expect(response.status).toBe(404);
   });
 });

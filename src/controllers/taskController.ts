@@ -38,7 +38,11 @@ export class TaskController {
   }
 
   deleteTask(req: Request, res: Response) {
-    LocalStorageService.deleteTask(Number(req.params.id));
-    res.status(204).send();
+    try {
+      LocalStorageService.deleteTask(Number(req.params.id));
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(404).json({ error: error?.message || "Task not found" });
+    }
   }
 }

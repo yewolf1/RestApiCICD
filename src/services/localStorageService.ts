@@ -51,15 +51,19 @@ export class LocalStorageService {
       if (title !== undefined) task.title = title;
       if (completed !== undefined) task.completed = completed;
       this.saveTasks();
+      return task;
     }
-    return task;
+    return null;
   }
 
   static deleteTask(id: number) {
-    this.tasks = this.tasks.filter((task) => task.id !== id);
+    const taskIndex = this.tasks.findIndex((task) => task.id === id);
+    if (taskIndex === -1) {
+      throw new Error(`Task with ID ${id} not found`);
+    }
+    this.tasks.splice(taskIndex, 1);
     this.saveTasks();
   }
 }
 
-// Charger les tâches au démarrage du serveur
 LocalStorageService.loadTasks();
