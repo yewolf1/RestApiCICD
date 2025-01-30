@@ -1,0 +1,15 @@
+{
+  "tags": {
+    "allowUnknownTags": true
+  },
+  "source": {
+    "include": ["dist"],
+    "includePattern": ".+\\.js$",
+    "excludePattern": "(node_modules|tests)"
+  },
+  "opts": {
+    "destination": "./docs",
+    "recurse": true,
+    "template": "node_modules/jsdoc/templates/default"
+  }
+}
