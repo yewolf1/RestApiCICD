@@ -1,4 +1,5 @@
 let allTasks = [];
+
 async function fetchTasks() {
   const response = await fetch("http://localhost:3000/api/tasks");
   allTasks = await response.json();
@@ -16,14 +17,12 @@ function renderTasks(filter = null) {
     const li = document.createElement("li");
     li.innerHTML = `
             <span class="status-icon">${task.completed ? "✔️" : "❌"}</span>
-            <input type="text" value="${task.title}" id="edit-${
-      task.id
-    }" class="task-title">
+            <span class="task-title">${task.title}</span>
             <button onclick="updateTask(${task.id})">Modifier</button>
             <button onclick="deleteTask(${task.id})">Supprimer</button>
-            <button onclick="toggleComplete(${task.id}, ${!task.completed})">${
-      task.completed ? "Marquer Non Finie" : "Marquer Finie"
-    }</button>
+            <button onclick="toggleComplete(${task.id}, ${!task.completed})">
+                ${task.completed ? "Marquer Non Finie" : "Marquer Finie"}
+            </button>
         `;
     taskList.appendChild(li);
   });
@@ -31,6 +30,7 @@ function renderTasks(filter = null) {
 
 async function addTask() {
   const taskInput = document.getElementById("taskInput");
+  if (taskInput.value.trim() === "") return;
   await fetch("http://localhost:3000/api/tasks", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -41,13 +41,15 @@ async function addTask() {
 }
 
 async function updateTask(id) {
-  const updatedTitle = document.getElementById(`edit-${id}`).value;
-  await fetch(`http://localhost:3000/api/tasks/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title: updatedTitle }),
-  });
-  fetchTasks();
+  const updatedTitle = prompt("Modifier la tâche :");
+  if (updatedTitle && updatedTitle.trim() !== "") {
+    await fetch(`http://localhost:3000/api/tasks/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: updatedTitle }),
+    });
+    fetchTasks();
+  }
 }
 
 async function deleteTask(id) {
