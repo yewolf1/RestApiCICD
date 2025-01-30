@@ -54,7 +54,7 @@ jobs:
 
   e2e-tests:
     runs-on: ubuntu-latest
-    needs: unit-tests # Attendre que les tests unitaires soient terminés
+    needs: unit-tests
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -67,15 +67,19 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps # Télécharge les navigateurs nécessaires
+
+      - name: Start the application server for E2E tests
+        run: npm start &
+        env:
+          PORT: 3000
+
+      - name: Wait for server to be ready
+        run: npx wait-on http://localhost:3000
+
       - name: Run Playwright end-to-end tests
         run: npx playwright test
 
       - name: Stop server after E2E tests
         run: kill $(lsof -t -i:3000) || echo "No process found running on port 3000"
-
-      - name: Upload Playwright reports
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: playwright-report
-          path: playwright-report/
