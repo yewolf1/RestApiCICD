@@ -11,6 +11,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      cache-key: ${{ steps.cache-dependencies.outputs.cache-hit }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -19,14 +21,44 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: "18"
+          cache: "npm"
+
+      - name: Cache Node modules
+        id: cache-dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
 
       - name: Install dependencies
         run: npm install
+
+      - name: Upload build cache
+        uses: actions/upload-artifact@v3
+        with:
+          name: node_modules
+          path: node_modules
 
   unit-tests:
     runs-on: ubuntu-latest
     needs: build
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Download build cache
+        uses: actions/download-artifact@v3
+        with:
+          name: node_modules
+          path: node_modules
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "18"
+
       - name: Start the application server for unit tests
         run: npm start &
         env:
@@ -40,13 +72,34 @@ jobs:
 
       - name: Stop server after unit tests
         run: kill $(lsof -t -i:3000) || echo "No process found running on port 3000"
-
   e2e-tests:
     runs-on: ubuntu-latest
     needs: unit-tests
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Download build cache
+        uses: actions/download-artifact@v3
+        with:
+          name: node_modules
+          path: node_modules
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "18"
+
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps # Télécharge les navigateurs nécessaires
+        run: npx playwright install --with-deps
+
+      - name: Start the application server for E2E tests
+        run: npm start &
+        env:
+          PORT: 3000
+
+      - name: Wait for server to be ready
+        run: npx wait-on http://localhost:3000
 
       - name: Run Playwright end-to-end tests
         run: npx playwright test
