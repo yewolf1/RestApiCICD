@@ -35,9 +35,6 @@ jobs:
         with:
           node-version: "18"
 
-      - name: Install dependencies
-        run: npm install
-
       - name: Start the application server for unit tests
         run: npm start &
         env:
@@ -63,9 +60,6 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: "18"
-
-      - name: Install dependencies
-        run: npm install
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps # Télécharge les navigateurs nécessaires
